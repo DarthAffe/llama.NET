@@ -34,4 +34,16 @@ public enum LlamaFType
     /// tok_embeddings.weight and output.weight are F16
     /// </summary>
     MostlyQ4_1SomeF16 = 4,
+
+    /// <summary>
+    /// llama.h: LLAMA_FTYPE_MOSTLY_Q4_2
+    /// except 1d tensors
+    /// </summary>
+    MostlyQ4_2 = 5,
+
+    /// <summary>
+    /// llama.h: LLAMA_FTYPE_MOSTLY_Q4_3
+    /// except 1d tensors
+    /// </summary>
+    MostlyQ4_3 = 6,
 }

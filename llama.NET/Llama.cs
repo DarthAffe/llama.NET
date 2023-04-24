@@ -36,11 +36,12 @@ public static unsafe class Llama
         _llamaMMockSupported = (delegate* unmanaged[Cdecl]<bool>)LoadFunction("llama_mlock_supported");
         _llamaInitFromFile = (delegate* unmanaged[Cdecl]<string, LlamaContextParams, nint>)LoadFunction("llama_init_from_file");
         _llamaFree = (delegate* unmanaged[Cdecl]<nint, void>)LoadFunction("llama_free");
-        _llamaModelQuantize = (delegate* unmanaged[Cdecl]<string, string, LlamaFType, int>)LoadFunction("llama_model_quantize");
-        _llamaGetKvCache = (delegate* unmanaged[Cdecl]<nint, nint>)LoadFunction("llama_get_kv_cache");
-        _llamaGetKvCacheSize = (delegate* unmanaged[Cdecl]<nint, uint>)LoadFunction("llama_get_kv_cache_size");
+        _llamaModelQuantize = (delegate* unmanaged[Cdecl]<string, string, LlamaFType, int, int>)LoadFunction("llama_model_quantize");
+        _llamaApplyLoraFromFile = (delegate* unmanaged[Cdecl]<nint, string, string, int, int>)LoadFunction("llama_apply_lora_from_file");
         _llamaGetKvCacheTokenCount = (delegate* unmanaged[Cdecl]<nint, int>)LoadFunction("llama_get_kv_cache_token_count");
-        _llamaSetKvCache = (delegate* unmanaged[Cdecl]<nint, nint, uint, int, void>)LoadFunction("llama_set_kv_cache");
+        _llamaGetStateSize = (delegate* unmanaged[Cdecl]<nint, uint>)LoadFunction("llama_get_state_size");
+        _llamaCopyStateData = (delegate* unmanaged[Cdecl]<nint, ref byte, uint>)LoadFunction("llama_copy_state_data");
+        _llamaSetStateData = (delegate* unmanaged[Cdecl]<nint, in byte, uint>)LoadFunction("llama_set_state_data");
         _llamaEval = (delegate* unmanaged[Cdecl]<nint, LlamaToken*, int, int, int, int>)LoadFunction("llama_eval");
         _llamaTokenize = (delegate* unmanaged[Cdecl]<nint, string, LlamaToken*, int, bool, int>)LoadFunction("llama_tokenize");
         _llamaNVocab = (delegate* unmanaged[Cdecl]<nint, int>)LoadFunction("llama_n_vocab");
@@ -73,10 +74,11 @@ public static unsafe class Llama
         _llamaInitFromFile = null;
         _llamaFree = null;
         _llamaModelQuantize = null;
-        _llamaGetKvCache = null;
-        _llamaGetKvCacheSize = null;
+        _llamaApplyLoraFromFile = null;
         _llamaGetKvCacheTokenCount = null;
-        _llamaSetKvCache = null;
+        _llamaGetStateSize = null;
+        _llamaCopyStateData = null;
+        _llamaSetStateData = null;
         _llamaEval = null;
         _llamaTokenize = null;
         _llamaNVocab = null;
@@ -118,11 +120,12 @@ public static unsafe class Llama
     private static delegate* unmanaged[Cdecl]<bool> _llamaMMockSupported;
     private static delegate* unmanaged[Cdecl]<string, LlamaContextParams, nint> _llamaInitFromFile;
     private static delegate* unmanaged[Cdecl]<nint, void> _llamaFree;
-    private static delegate* unmanaged[Cdecl]<string, string, LlamaFType, int> _llamaModelQuantize;
-    private static delegate* unmanaged[Cdecl]<nint, nint> _llamaGetKvCache;
-    private static delegate* unmanaged[Cdecl]<nint, uint> _llamaGetKvCacheSize;
+    private static delegate* unmanaged[Cdecl]<string, string, LlamaFType, int, int> _llamaModelQuantize;
+    private static delegate* unmanaged[Cdecl]<nint, string, string, int, int> _llamaApplyLoraFromFile;
     private static delegate* unmanaged[Cdecl]<nint, int> _llamaGetKvCacheTokenCount;
-    private static delegate* unmanaged[Cdecl]<nint, nint, uint, int, void> _llamaSetKvCache;
+    private static delegate* unmanaged[Cdecl]<nint, uint> _llamaGetStateSize;
+    private static delegate* unmanaged[Cdecl]<nint, ref byte, uint> _llamaCopyStateData;
+    private static delegate* unmanaged[Cdecl]<nint, in byte, uint> _llamaSetStateData;
     private static delegate* unmanaged[Cdecl]<nint, LlamaToken*, int, int, int, int> _llamaEval;
     private static delegate* unmanaged[Cdecl]<nint, string, LlamaToken*, int, bool, int> _llamaTokenize;
     private static delegate* unmanaged[Cdecl]<nint, int> _llamaNVocab;
@@ -159,36 +162,23 @@ public static unsafe class Llama
         if (_llamaMMockSupported == null) throw new LlamaException("The library is not loaded.");
         return _llamaMMockSupported();
     }
-    
+
     public static LlamaContext InitFromFile(string modelPath, LlamaContextParams contextParams)
     {
         if (_llamaInitFromFile == null) throw new LlamaException("The library is not loaded.");
         return new LlamaContext(_llamaInitFromFile(modelPath, contextParams));
     }
-    
+
     public static void Free(LlamaContext context)
     {
         if (_llamaFree == null) throw new LlamaException("The library is not loaded.");
         _llamaFree(context);
     }
 
-    public static int ModelQuantize(string inputName, string outputName, LlamaFType type)
+    public static int ModelQuantize(string inputName, string outputName, LlamaFType type, int threads = 0)
     {
         if (_llamaModelQuantize == null) throw new LlamaException("The library is not loaded.");
-        return _llamaModelQuantize(inputName, outputName, type);
-    }
-
-    //TODO DarthAffe 15.04.2023: What is this actually returning? A byte array?
-    public static nint GetKvCache(LlamaContext context)
-    {
-        if (_llamaGetKvCache == null) throw new LlamaException("The library is not loaded.");
-        return _llamaGetKvCache(context);
-    }
-
-    public static uint GetKvCacheSize(LlamaContext context)
-    {
-        if (_llamaGetKvCacheSize == null) throw new LlamaException("The library is not loaded.");
-        return _llamaGetKvCacheSize(context);
+        return _llamaModelQuantize(inputName, outputName, type, threads);
     }
 
     public static int GetKvCacheTokenCount(LlamaContext context)
@@ -197,14 +187,31 @@ public static unsafe class Llama
         return _llamaGetKvCacheTokenCount(context);
     }
 
-    //TODO DarthAffe 15.04.2023: Same as with GetKVCache above.
-    public static void SetKvCache(LlamaContext context, nint kvCache, uint size, int tokenCount)
+    public static int ApplyLoraFromFile(LlamaContext context, string loraPath, string baseModelPath, int threads = 0)
     {
-        if (_llamaSetKvCache == null) throw new LlamaException("The library is not loaded.");
-        _llamaSetKvCache(context, kvCache, size, tokenCount);
+        if (_llamaApplyLoraFromFile == null) throw new LlamaException("The library is not loaded.");
+        return _llamaApplyLoraFromFile(context, loraPath, baseModelPath, threads);
     }
 
-    public static bool Eval(LlamaContext context, Span<LlamaToken> tokens, int pastTokenCount, int threads)
+    public static uint GetStateSize(LlamaContext context)
+    {
+        if (_llamaGetStateSize == null) throw new LlamaException("The library is not loaded.");
+        return _llamaGetStateSize(context);
+    }
+
+    public static uint CopyStateData(LlamaContext context, in Span<byte> destination)
+    {
+        if (_llamaCopyStateData == null) throw new LlamaException("The library is not loaded.");
+        return _llamaCopyStateData(context, ref MemoryMarshal.GetReference(destination));
+    }
+
+    public static uint SetStateData(LlamaContext context, in ReadOnlySpan<byte> destination)
+    {
+        if (_llamaSetStateData == null) throw new LlamaException("The library is not loaded.");
+        return _llamaSetStateData(context, in MemoryMarshal.GetReference(destination));
+    }
+
+    public static bool Eval(LlamaContext context, in Span<LlamaToken> tokens, int pastTokenCount, int threads)
     {
         if (_llamaEval == null) throw new LlamaException("The library is not loaded.");
 
@@ -275,7 +282,7 @@ public static unsafe class Llama
         return _llamaTokenEos();
     }
 
-    public static LlamaToken SampleTopPTopK(LlamaContext context, Span<LlamaToken> lastTokens, int topK, float topP, float temperature, float repeatPenalty)
+    public static LlamaToken SampleTopPTopK(LlamaContext context, in Span<LlamaToken> lastTokens, int topK, float topP, float temperature, float repeatPenalty)
     {
         if (_llamaSampleTopPTopK == null) throw new LlamaException("The library is not loaded.");
 
