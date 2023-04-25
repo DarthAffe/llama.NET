@@ -224,7 +224,7 @@ public static unsafe class Llama
         if (_llamaTokenize == null) throw new LlamaException("The library is not loaded.");
 
         //TODO DarthAffe 15.04.2023: Fix this to not allocate that much if not needed and maybe add an overload to provide a buffer to prevent the allocation.
-        LlamaToken[] tokens = new LlamaToken[2048];
+        LlamaToken[] tokens = new LlamaToken[maxTokenCount];
         fixed (LlamaToken* tokenPtr = tokens)
         {
             int count = _llamaTokenize(context, text, tokenPtr, maxTokenCount, addBos);
@@ -270,16 +270,16 @@ public static unsafe class Llama
         return Marshal.PtrToStringUTF8(_llamaTokenToStr(context, token)) ?? string.Empty;
     }
 
-    public static int TokenBos()
+    public static LlamaToken TokenBos()
     {
         if (_llamaTokenBos == null) throw new LlamaException("The library is not loaded.");
-        return _llamaTokenBos();
+        return new LlamaToken(_llamaTokenBos());
     }
 
-    public static int TokenEos()
+    public static LlamaToken TokenEos()
     {
         if (_llamaTokenEos == null) throw new LlamaException("The library is not loaded.");
-        return _llamaTokenEos();
+        return new LlamaToken(_llamaTokenEos());
     }
 
     public static LlamaToken SampleTopPTopK(LlamaContext context, in Span<LlamaToken> lastTokens, int topK, float topP, float temperature, float repeatPenalty)
