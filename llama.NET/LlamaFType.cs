@@ -41,9 +41,23 @@ public enum LlamaFType
     /// </summary>
     MostlyQ4_2 = 5,
 
+    // LLAMA_FTYPE_MOSTLY_Q4_3 (6) support has been removed
+
     /// <summary>
-    /// llama.h: LLAMA_FTYPE_MOSTLY_Q4_3
+    /// llama.h: LLAMA_FTYPE_MOSTLY_Q8_0
     /// except 1d tensors
     /// </summary>
-    MostlyQ4_3 = 6,
+    MostlyQ8_0 = 7,
+
+    /// <summary>
+    /// llama.h: LLAMA_FTYPE_MOSTLY_Q5_0
+    /// except 1d tensors
+    /// </summary>
+    MostlyQ5_0 = 8,
+
+    /// <summary>
+    /// llama.h: LLAMA_FTYPE_MOSTLY_Q5_1
+    /// except 1d tensors
+    /// </summary>
+    MostlyQ5_1 = 9,
 }
