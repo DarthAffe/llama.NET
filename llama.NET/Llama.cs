@@ -300,17 +300,16 @@ public static unsafe class Llama
     /// <summary>
     /// Load session file.
     /// </summary>
-    public static bool LoadSessionFile(LlamaContext context, string path, ref Span<LlamaToken> tokens)
+    public static bool LoadSessionFile(LlamaContext context, string path, Span<LlamaToken> tokenBuffer, out int tokenCount)
     {
         if (_llamaLoadSessionFile == null) throw new LlamaException("The library is not loaded.");
 
-        bool result;
-        uint tokenCount;
-        fixed (LlamaToken* tokenPtr = tokens)
-            result = _llamaLoadSessionFile(context, path, tokenPtr, (uint)tokens.Length, out tokenCount);
-
-        tokens = tokens[..(int)tokenCount];
-        return result;
+        fixed (LlamaToken* tokenPtr = tokenBuffer)
+        {
+            bool result = _llamaLoadSessionFile(context, path, tokenPtr, (uint)tokenBuffer.Length, out uint tCount);
+            tokenCount = (int)tCount;
+            return result;
+        }
     }
 
     /// <summary>
